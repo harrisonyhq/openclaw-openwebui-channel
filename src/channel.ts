@@ -1,4 +1,6 @@
-import type { ChannelPlugin, OpenClawConfig, PluginRuntime } from "openclaw/plugin-sdk";
+import type { ChannelPlugin } from "openclaw/plugin-sdk/channel-core";
+import type { OpenClawConfig } from "openclaw/plugin-sdk/config-contracts";
+import type { PluginRuntime } from "openclaw/plugin-sdk/runtime-store";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -54,7 +56,7 @@ export interface ResolvedOpenWebUIAccount {
   config: OpenWebUIChannelConfig;
 }
 
-function resolveOpenWebUIAccount(cfg: OpenClawConfig, accountId?: string): ResolvedOpenWebUIAccount {
+function resolveOpenWebUIAccount(cfg: OpenClawConfig, accountId?: string | null): ResolvedOpenWebUIAccount {
   const channelCfg = (cfg.channels as Record<string, unknown>)?.["open-webui"] as OpenWebUIChannelConfig | undefined;
   
   const baseUrl = channelCfg?.baseUrl ?? "";
@@ -200,7 +202,7 @@ function sanitizeFilename(value: string): string {
 
 async function persistInboundMedia(
   core: PluginRuntime,
-  file: { id: string; buffer: Buffer; filename?: string; mimeType?: string }
+  file: { id: string; buffer: Buffer | ArrayBuffer | ArrayBufferView; filename?: string; mimeType?: string }
 ): Promise<string> {
   // Ensure buffer is a proper Node.js Buffer (undici fetch ArrayBuffer workaround)
   let safeBuffer: Buffer;
@@ -309,6 +311,10 @@ export const openWebUIPlugin: ChannelPlugin<ResolvedOpenWebUIAccount> = {
     },
   },
   actions: {
+    describeMessageTool: () => ({
+      actions: ["send", "react"],
+      mediaSourceParams: { send: ["filePath", "mediaUrl", "media"] },
+    }),
     supportsAction: ({ action }) => action === "send" || action === "react",
     handleAction: async (ctx) => {
       const params = ctx.params as Record<string, unknown>;
@@ -390,7 +396,7 @@ export const openWebUIPlugin: ChannelPlugin<ResolvedOpenWebUIAccount> = {
           dataPayload.files = uploadedFiles;
         }
 
-        // Never set parentId in handleAction — Open WebUI hides messages with
+        // Never set parentId in handleAction. Open WebUI hides messages with
         // a parent_id that doesn't exist in the target channel, and there is
         // no safe way for the agent to know the correct parent_id for a
         // different channel. Use replyTo (reply_to_id) for replies instead.
@@ -441,7 +447,7 @@ export const openWebUIPlugin: ChannelPlugin<ResolvedOpenWebUIAccount> = {
       baseUrl: account.baseUrl,
     }),
     resolveAllowFrom: () => [],
-    formatAllowFrom: ({ allowFrom }) => allowFrom,
+    formatAllowFrom: ({ allowFrom }) => allowFrom.map(String),
   },
   gateway: {
     startAccount: async (ctx) => {
@@ -508,58 +514,40 @@ export const openWebUIPlugin: ChannelPlugin<ResolvedOpenWebUIAccount> = {
       const normalizedTo = to.replace(/^open-webui:/i, "");
       const account = resolveOpenWebUIAccount(cfg, accountId);
       const apiAccount = getAccountFromResolved(account);
-      try {
-        const message = await postMessage(apiAccount, normalizedTo, text, {
-          replyToId: replyToId ?? undefined,
-          parentId: threadId ? String(threadId) : undefined,
-        });
-        return {
-          channel: "open-webui",
-          ok: true,
-          messageId: message.id,
-        };
-      } catch (err) {
-        return {
-          channel: "open-webui",
-          ok: false,
-          error: String(err),
-        };
-      }
+      const message = await postMessage(apiAccount, normalizedTo, text, {
+        replyToId: replyToId ?? undefined,
+        parentId: threadId ? String(threadId) : undefined,
+      });
+      return {
+        channel: "open-webui",
+        messageId: message.id,
+      };
     },
     sendMedia: async ({ to, text, mediaUrl, replyToId, threadId, accountId, cfg }) => {
       const normalizedTo = to.replace(/^open-webui:/i, "");
       const account = resolveOpenWebUIAccount(cfg, accountId);
       const apiAccount = getAccountFromResolved(account);
-      try {
-        const uploadedFiles: OpenWebUIFile[] = [];
-        if (mediaUrl) {
-          const uploaded = await uploadFile(apiAccount, mediaUrl);
-          uploadedFiles.push(uploaded);
-        }
-
-        const content = text?.trim() || " ";
-        const dataPayload: Record<string, unknown> = {};
-        if (uploadedFiles.length > 0) {
-          dataPayload.files = uploadedFiles.map(wrapUploadedFile);
-        }
-
-        const message = await postMessage(apiAccount, normalizedTo, content, {
-          replyToId: replyToId ?? undefined,
-          parentId: threadId ? String(threadId) : undefined,
-          data: dataPayload,
-        });
-        return {
-          channel: "open-webui",
-          ok: true,
-          messageId: message.id,
-        };
-      } catch (err) {
-        return {
-          channel: "open-webui",
-          ok: false,
-          error: String(err),
-        };
+      const uploadedFiles: OpenWebUIFile[] = [];
+      if (mediaUrl) {
+        const uploaded = await uploadFile(apiAccount, mediaUrl);
+        uploadedFiles.push(uploaded);
       }
+
+      const content = text?.trim() || " ";
+      const dataPayload: Record<string, unknown> = {};
+      if (uploadedFiles.length > 0) {
+        dataPayload.files = uploadedFiles.map(wrapUploadedFile);
+      }
+
+      const message = await postMessage(apiAccount, normalizedTo, content, {
+        replyToId: replyToId ?? undefined,
+        parentId: threadId ? String(threadId) : undefined,
+        data: dataPayload,
+      });
+      return {
+        channel: "open-webui",
+        messageId: message.id,
+      };
     },
   },
   messaging: {
@@ -788,7 +776,7 @@ async function handleChannelEvent(
     channel: "open-webui",
     accountId: account.accountId,
     peer: {
-      kind: isDm ? "dm" : channelType === "standard" ? "channel" : "group",
+      kind: isDm ? "direct" : channelType === "standard" ? "channel" : "group",
       id: parentId ? `${channelId}:${parentId}` : channelId,
     },
   });

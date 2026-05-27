@@ -1,17 +1,11 @@
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
-import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
+import { defineChannelPluginEntry } from "openclaw/plugin-sdk/channel-core";
 import { openWebUIPlugin } from "./src/channel.js";
 import { setOpenWebUIRuntime } from "./src/runtime.js";
 
-const plugin = {
+export default defineChannelPluginEntry({
   id: "open-webui",
   name: "Open WebUI",
-  description: "Open WebUI channels plugin",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
-    setOpenWebUIRuntime(api.runtime);
-    api.registerChannel({ plugin: openWebUIPlugin });
-  },
-};
-
-export default plugin;
+  description: "Open WebUI channels integration via REST API and Socket.IO.",
+  plugin: openWebUIPlugin,
+  setRuntime: setOpenWebUIRuntime,
+});

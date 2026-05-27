@@ -4,11 +4,37 @@
   "description": "OpenClaw plugin to connect with Open WebUI Channels. Enables bidirectional communication with Open WebUI channels, making OpenClaw act as a user within Open WebUI.",
   "type": "module",
   "main": "index.ts",
-  "keywords": ["openclaw", "open-webui", "channels", "plugin", "chat"],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "openclaw",
+    "open-webui",
+    "channels",
+    "plugin",
+    "chat"
+  ],
   "author": "Skyzi000",
   "license": "MIT",
   "openclaw": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "channel": {
+      "id": "open-webui",
+      "label": "Open WebUI",
+      "selectionLabel": "Open WebUI (Channels)",
+      "docsPath": "https://github.com/skyzi000/openclaw-open-webui-channels#readme",
+      "docsLabel": "GitHub README",
+      "blurb": "Open WebUI channels integration via REST API and Socket.IO.",
+      "markdownCapable": true,
+      "exposure": {
+        "configured": true,
+        "setup": true,
+        "docs": true
+      }
+    }
   },
   "repository": {
     "type": "git",
@@ -22,6 +48,8 @@
     "socket.io-client": "^4.7.0"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
+    "openclaw": "^2026.5.22",
     "typescript": "^5.9.3"
   }
 }

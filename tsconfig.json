@@ -9,5 +9,5 @@
     "noEmit": true,
     "declaration": false
   },
-  "include": ["index.ts", "src/**/*.ts"]
+  "include": ["index.ts", "setup-entry.ts", "src/**/*.ts"]
 }

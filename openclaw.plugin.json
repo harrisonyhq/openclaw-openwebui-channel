@@ -1,5 +1,6 @@
 {
   "id": "open-webui",
+  "kind": "channel",
   "name": "Open WebUI",
   "description": "Open WebUI channels integration via REST API and Socket.IO.",
   "version": "0.4.2",
@@ -8,5 +9,92 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {}
+  },
+  "channelConfigs": {
+    "open-webui": {
+      "label": "Open WebUI",
+      "description": "Open WebUI channels integration via REST API and Socket.IO.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "Base URL for the Open WebUI instance."
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address for the dedicated Open WebUI bot user."
+          },
+          "password": {
+            "type": "string",
+            "description": "Password for the dedicated Open WebUI bot user."
+          },
+          "userId": {
+            "type": "string",
+            "description": "Optional Open WebUI user id for the bot account."
+          },
+          "channelIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": [],
+            "description": "Open WebUI channel ids to monitor. Empty means all channels."
+          },
+          "requireMention": {
+            "type": "boolean",
+            "default": true,
+            "description": "Require an explicit bot mention in non-DM chats."
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional display name for this Open WebUI account."
+          },
+          "textChunkLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 4000,
+            "description": "Maximum text length per outbound Open WebUI message."
+          }
+        },
+        "required": ["baseUrl", "email", "password"]
+      },
+      "uiHints": {
+        "baseUrl": {
+          "label": "Base URL",
+          "placeholder": "http://localhost:3000"
+        },
+        "email": {
+          "label": "Bot email",
+          "placeholder": "openclaw-bot@example.com"
+        },
+        "password": {
+          "label": "Bot password",
+          "sensitive": true
+        },
+        "userId": {
+          "label": "Bot user ID",
+          "advanced": true
+        },
+        "channelIds": {
+          "label": "Channel IDs",
+          "advanced": true
+        },
+        "requireMention": {
+          "label": "Require mention"
+        },
+        "name": {
+          "label": "Account name",
+          "advanced": true
+        },
+        "textChunkLimit": {
+          "label": "Text chunk limit",
+          "advanced": true
+        }
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { defineChannelPluginEntry } from "openclaw/plugin-sdk/channel-core";
 import { openWebUIPlugin } from "./src/channel.js";
+import { registerOpenWebUIProgressEvents } from "./src/progress.js";
 import { setOpenWebUIRuntime } from "./src/runtime.js";
 
 export default defineChannelPluginEntry({
@@ -8,4 +9,5 @@ export default defineChannelPluginEntry({
   description: "Open WebUI channels integration via REST API and Socket.IO.",
   plugin: openWebUIPlugin,
   setRuntime: setOpenWebUIRuntime,
+  registerFull: registerOpenWebUIProgressEvents,
 });

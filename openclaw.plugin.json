@@ -58,6 +58,43 @@
             "minimum": 1,
             "default": 4000,
             "description": "Maximum text length per outbound Open WebUI message."
+          },
+          "progressEvents": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Mirror OpenClaw Control UI agent events back to the originating Open WebUI channel as JSON messages.",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false,
+                "description": "Enable mirroring of OpenClaw agent events for Open WebUI-originated runs."
+              },
+              "includeStreams": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Optional allow-list of OpenClaw agent event streams to mirror. Defaults to all public Control UI streams except thinking."
+              },
+              "excludeStreams": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Optional deny-list of OpenClaw agent event streams to suppress."
+              },
+              "includeThinking": {
+                "type": "boolean",
+                "default": false,
+                "description": "Also mirror thinking events when the runtime exposes them. Disabled by default to avoid exposing internal reasoning."
+              },
+              "maxMessageChars": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Optional maximum serialized JSON characters per mirrored event before truncation."
+              },
+              "codeFence": {
+                "type": "boolean",
+                "default": true,
+                "description": "Wrap mirrored JSON events in a Markdown json code fence."
+              }
+            }
           }
         },
         "required": ["baseUrl", "email", "password"]
@@ -92,6 +129,10 @@
         },
         "textChunkLimit": {
           "label": "Text chunk limit",
+          "advanced": true
+        },
+        "progressEvents": {
+          "label": "Mirror Control UI events",
           "advanced": true
         }
       }

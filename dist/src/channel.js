@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { getOpenWebUIRuntime } from "./runtime.js";
 import { postMessage, getAuthToken, getMessageById, addReaction, removeReaction, uploadFile, downloadFileContent, getChannels, } from "./api.js";
 import { connectSocket, disconnectSocket, getConnection } from "./socket.js";
+import { forgetProgressTarget, rememberProgressTarget } from "./progress.js";
 // Plugin metadata
 const meta = {
     id: "open-webui",
@@ -707,6 +708,16 @@ async function handleChannelEvent(event, options) {
     const finalizedCtx = core.channel.reply.finalizeInboundContext(ctxPayload);
     // Dispatch to agent
     const textLimit = account.config.textChunkLimit ?? 4000;
+    const finalizedSessionKey = typeof finalizedCtx.SessionKey === "string" ? finalizedCtx.SessionKey : route.sessionKey;
+    rememberProgressTarget(finalizedSessionKey, {
+        accountId: account.accountId,
+        account: apiAccount,
+        channelId: outboundTarget,
+        replyToId,
+        parentId,
+        textChunkLimit: textLimit,
+        config: account.config.progressEvents ?? {},
+    });
     // Send typing indicator immediately and refresh every 4s (Open WebUI expires after 5s)
     const typingMessageId = parentId ?? null;
     let typingInterval = null;
@@ -842,5 +853,6 @@ async function handleChannelEvent(event, options) {
     finally {
         markDispatchIdle();
         await stopTyping();
+        forgetProgressTarget(finalizedSessionKey);
     }
 }

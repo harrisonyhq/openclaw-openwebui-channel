@@ -90,7 +90,10 @@ You can also directly edit `~/.openclaw/openclaw.json`:
       "email": "openclaw-bot@yourdomain.com",
       "password": "your-password",
       "channelIds": [],
-      "requireMention": true
+      "requireMention": true,
+      "progressEvents": {
+        "enabled": true
+      }
     }
   }
 }
@@ -119,6 +122,48 @@ Once setup is complete, OpenClaw will monitor messages in the specified channels
 - **Chat with OpenClaw**: Mention OpenClaw in the channel to talk
 - **File Sending**: OpenClaw can send and receive images and files
 - **Thread Support**: Conversations within threads are properly handled
+
+### Mirroring Control UI Agent Events
+
+Set `channels.open-webui.progressEvents.enabled` to `true` to mirror OpenClaw agent events for Open WebUI-originated runs back into the same Open WebUI channel. This does not summarize each step; it sends the structured event payload that OpenClaw exposes to plugins as JSON.
+
+```json
+{
+  "channels": {
+    "open-webui": {
+      "enabled": true,
+      "baseUrl": "http://your-server:3000",
+      "email": "openclaw-bot@yourdomain.com",
+      "password": "your-password",
+      "channelIds": ["79d159b0-df15-4756-b605-1fafe3d615f5"],
+      "requireMention": true,
+      "progressEvents": {
+        "enabled": true,
+        "includeStreams": [
+          "lifecycle",
+          "tool",
+          "assistant",
+          "error",
+          "item",
+          "plan",
+          "approval",
+          "command_output",
+          "patch",
+          "compaction"
+        ],
+        "codeFence": true
+      }
+    }
+  },
+  "messages": {
+    "groupChat": {
+      "visibleReplies": "automatic"
+    }
+  }
+}
+```
+
+By default, `thinking` events are not mirrored because they may expose internal reasoning. If your OpenClaw runtime exposes only safe thinking summaries and you explicitly want them in the channel, set `progressEvents.includeThinking` to `true`.
 
 ## Troubleshooting
 

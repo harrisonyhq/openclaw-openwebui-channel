@@ -39,6 +39,7 @@ export interface OpenWebUIChannelConfig {
   enabled?: boolean;
   channelIds?: string[];
   requireMention?: boolean;
+  sessionScope?: "channel" | "user" | "message";
   name?: string;
   textChunkLimit?: number;
   progressEvents?: OpenWebUIProgressEventsConfig;
@@ -92,6 +93,29 @@ function getAccountFromResolved(account: ResolvedOpenWebUIAccount): OpenWebUIAcc
     password: account.password,
     userId: account.userId,
   };
+}
+
+function resolvePeerId(params: {
+  channelId: string;
+  parentId?: string;
+  senderId: string;
+  messageId: string;
+  isDm: boolean;
+  scope?: OpenWebUIChannelConfig["sessionScope"];
+}): string {
+  const base = params.parentId ? `${params.channelId}:${params.parentId}` : params.channelId;
+  if (params.isDm) {
+    return base;
+  }
+
+  const scope = params.scope ?? "user";
+  if (scope === "channel") {
+    return base;
+  }
+  if (scope === "message") {
+    return `${base}:message:${params.messageId}`;
+  }
+  return `${base}:user:${params.senderId}`;
 }
 
 // Track per-account state (bot user ID + channel name cache)
@@ -773,16 +797,24 @@ async function handleChannelEvent(
     log
   );
 
-  // Resolve the route for this message
-  // Use parentId to separate thread sessions from channel sessions,
-  // similar to how Discord uses thread IDs for session isolation.
+  // Resolve the route for this message. By default, group/channel messages
+  // are isolated per sender so concurrent mentions do not interrupt each
+  // other while still replying to the same Open WebUI channel.
+  const peerId = resolvePeerId({
+    channelId,
+    parentId,
+    senderId: message.user_id,
+    messageId: message.id,
+    isDm,
+    scope: account.config.sessionScope,
+  });
   const route = core.channel.routing.resolveAgentRoute({
     cfg: config,
     channel: "open-webui",
     accountId: account.accountId,
     peer: {
       kind: isDm ? "direct" : channelType === "standard" ? "channel" : "group",
-      id: parentId ? `${channelId}:${parentId}` : channelId,
+      id: peerId,
     },
   });
 
@@ -828,7 +860,7 @@ async function handleChannelEvent(
   const channelName = rawChannelName.replace(/[\[\]\n\r]/g, "").slice(0, 100);
   const fromLabel = isDm
     ? `${senderName} user id:${message.user_id}`
-    : `Open WebUI #${channelName} channel id:${channelId}`;
+    : `Open WebUI #${channelName} channel id:${channelId} sender:${senderName} user id:${message.user_id}`;
   const body = text;
   const contextPrefix = `${threadParentContext}${replyContext}`;
   const bodyForAgent = contextPrefix ? `${contextPrefix}${text}` : text;

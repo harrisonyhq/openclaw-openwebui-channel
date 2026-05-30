@@ -84,6 +84,7 @@ openclaw gateway restart
       "password": "your-password",
       "channelIds": [],
       "requireMention": true,
+      "sessionScope": "user",
       "textChunkLimit": 4000,
       "progressEvents": {
         "enabled": false
@@ -113,6 +114,28 @@ openclaw gateway restart
 ```
 
 当 `requireMention` 为 `true` 时，非私聊消息必须 mention bot 才会触发 OpenClaw。私聊会绕过 mention 要求。
+
+## 会话隔离
+
+默认情况下，群聊/频道消息会按发送者隔离到不同的 OpenClaw session：
+
+```json
+{
+  "channels": {
+    "open-webui": {
+      "sessionScope": "user"
+    }
+  }
+}
+```
+
+这样同一个 Open WebUI channel 里，用户 A 的问题还没回答完时，用户 B 再次 `@bot` 不会打断用户 A 的 run。回复仍然会发回原来的 Open WebUI channel。
+
+可选模式：
+
+- `user`：按 channel/thread + 发送者隔离 session。默认值，推荐用于多人频道。
+- `message`：每一条 mention 都创建独立 session。如果同一个用户连续 @ 也必须互不打断，可以使用这个模式。
+- `channel`：旧行为。同一个 channel/thread 中所有用户共享一个 OpenClaw session，可能互相打断。
 
 ## 镜像 Control UI Agent Events
 
@@ -175,6 +198,7 @@ openclaw gateway restart
 | `userId` | string | 可选 | bot 用户 ID 覆盖值。 |
 | `channelIds` | string[] | `[]` | 频道白名单。空数组表示 bot 可访问的所有频道。 |
 | `requireMention` | boolean | `true` | 非私聊是否必须 mention bot 才触发。 |
+| `sessionScope` | string | `user` | 群聊/频道消息的 session 隔离模式：`user`、`message` 或 `channel`。 |
 | `name` | string | 可选 | OpenClaw 中显示的账户名称。 |
 | `textChunkLimit` | number | `4000` | 每条 Open WebUI 消息的最大字符数。 |
 | `progressEvents.enabled` | boolean | `false` | 是否镜像 OpenClaw agent events。 |

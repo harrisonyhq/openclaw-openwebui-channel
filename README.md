@@ -75,6 +75,7 @@ Edit `~/.openclaw/openclaw.json`:
       "password": "your-password",
       "channelIds": [],
       "requireMention": true,
+      "sessionScope": "user",
       "textChunkLimit": 4000,
       "progressEvents": {
         "enabled": false
@@ -104,6 +105,28 @@ Mention the bot user in an Open WebUI channel:
 ```
 
 When `requireMention` is `true`, non-DM channel messages are ignored unless they mention the bot. Direct messages bypass the mention requirement.
+
+## Session Isolation
+
+By default, group/channel messages are mapped to separate OpenClaw sessions per sender:
+
+```json
+{
+  "channels": {
+    "open-webui": {
+      "sessionScope": "user"
+    }
+  }
+}
+```
+
+This prevents a new mention from another user in the same Open WebUI channel from interrupting an ongoing answer. Replies still go back to the original Open WebUI channel.
+
+Available modes:
+
+- `user`: isolate sessions by channel/thread and sender. This is the default and recommended mode for shared channels.
+- `message`: isolate every mention into its own session. Use this if even repeated mentions from the same user must never interrupt each other.
+- `channel`: legacy behavior. All users in the same channel/thread share one OpenClaw session and can interrupt each other.
 
 ## Agent Event Mirroring
 
@@ -155,6 +178,7 @@ By default, `thinking` events are not mirrored because they may expose internal 
 | `userId` | string | optional | Optional bot user ID override. |
 | `channelIds` | string[] | `[]` | Channel allow-list. Empty means all accessible channels. |
 | `requireMention` | boolean | `true` | Require bot mention in non-DM chats. |
+| `sessionScope` | string | `user` | Session isolation mode for group/channel messages: `user`, `message`, or `channel`. |
 | `name` | string | optional | Display name for this account in OpenClaw. |
 | `textChunkLimit` | number | `4000` | Maximum characters per Open WebUI message chunk. |
 | `progressEvents.enabled` | boolean | `false` | Mirror OpenClaw agent events into Open WebUI. |

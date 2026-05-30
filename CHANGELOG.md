@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.4] - 2026-05-30
+
+### Added
+
+- Added `channels.open-webui.sessionScope` to control group/channel session isolation.
+- Default group/channel behavior now isolates sessions by sender so concurrent mentions from different users do not interrupt each other.
+- Added `message` session isolation mode for fully independent runs per mention.
+
 ## [0.4.3] - 2026-05-30
 
 ### Added

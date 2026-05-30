@@ -3,7 +3,7 @@
   "kind": "channel",
   "name": "Open WebUI",
   "description": "Open WebUI channels integration via REST API and Socket.IO.",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "channels": ["open-webui"],
   "configSchema": {
     "type": "object",
@@ -48,6 +48,12 @@
             "type": "boolean",
             "default": true,
             "description": "Require an explicit bot mention in non-DM chats."
+          },
+          "sessionScope": {
+            "type": "string",
+            "enum": ["channel", "user", "message"],
+            "default": "user",
+            "description": "How group/channel messages are mapped to OpenClaw sessions. user prevents different users from interrupting each other; message isolates every mention; channel keeps the legacy shared channel session."
           },
           "name": {
             "type": "string",
@@ -122,6 +128,10 @@
         },
         "requireMention": {
           "label": "Require mention"
+        },
+        "sessionScope": {
+          "label": "Session scope",
+          "advanced": true
         },
         "name": {
           "label": "Account name",

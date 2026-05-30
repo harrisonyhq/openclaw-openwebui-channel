@@ -90,6 +90,9 @@ export async function connectSocket(account, onMessage, logger, options) {
         }
         // Clean up stale disconnected socket to prevent duplicate events and leaks
         log.info(`[open-webui] Cleaning up stale disconnected socket`);
+        if (existing.rejoinInterval) {
+            clearInterval(existing.rejoinInterval);
+        }
         existing.socket.disconnect();
         connections.delete(connectionKey);
     }
@@ -158,14 +161,19 @@ export async function connectSocket(account, onMessage, logger, options) {
     }
     connection = { socket, account, userId: initialAuth.userId, handlers, connectPromise, desiredChannelIds };
     connections.set(connectionKey, connection);
+    const emitJoinChannels = () => {
+        if (!socket.connected) {
+            return;
+        }
+        // Join user room and all channel rooms currently visible to the bot user.
+        // Open WebUI resolves the actual channel set server-side from the auth token.
+        socket.emit("user-join", { auth: { token: currentToken } });
+        socket.emit("join-channels", { auth: { token: currentToken } });
+    };
     socket.on("connect", () => {
         hasConnectedOnce = true;
         log.info(`[open-webui] Socket.IO connected`);
-        // Join user room
-        socket.emit("user-join", { auth: { token: currentToken } });
-        // join-channels also requires auth; server ignores channel_ids and
-        // fetches all channels for the authenticated user.
-        socket.emit("join-channels", { auth: { token: currentToken } });
+        emitJoinChannels();
     });
     socket.on("disconnect", (reason) => {
         log.warn(`[open-webui] Socket.IO disconnected: ${reason}`);
@@ -180,6 +188,9 @@ export async function connectSocket(account, onMessage, logger, options) {
     // Fire when all reconnection attempts are exhausted
     socket.io.on("reconnect_failed", () => {
         log.error(`[open-webui] Socket.IO reconnection failed permanently`);
+        if (connection?.rejoinInterval) {
+            clearInterval(connection.rejoinInterval);
+        }
         connections.delete(connectionKey);
         if (hasConnectedOnce) {
             options?.onTerminalDisconnect?.();
@@ -188,6 +199,9 @@ export async function connectSocket(account, onMessage, logger, options) {
     // Listen for channel events
     socket.on("events:channel", async (event) => {
         // log.info(`[open-webui] Received event: ${event.data?.type} in channel ${event.channel_id}`);
+        if (event.data?.type === "channel:created") {
+            emitJoinChannels();
+        }
         // Process through all handlers
         for (const handler of handlers) {
             try {
@@ -198,6 +212,7 @@ export async function connectSocket(account, onMessage, logger, options) {
             }
         }
     });
+    connection.rejoinInterval = setInterval(emitJoinChannels, 60_000);
     // Wait for connection using the stored promise
     await connectPromise;
 }
@@ -205,12 +220,18 @@ export function disconnectSocket(account) {
     const connectionKey = `${account.baseUrl}:${account.email}`;
     const connection = connections.get(connectionKey);
     if (connection) {
+        if (connection.rejoinInterval) {
+            clearInterval(connection.rejoinInterval);
+        }
         connection.socket.disconnect();
         connections.delete(connectionKey);
     }
 }
 export function disconnectAll() {
     for (const [key, connection] of connections) {
+        if (connection.rejoinInterval) {
+            clearInterval(connection.rejoinInterval);
+        }
         connection.socket.disconnect();
         connections.delete(key);
     }

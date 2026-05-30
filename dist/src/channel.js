@@ -529,6 +529,9 @@ async function monitorOpenWebUIProvider(options) {
 }
 async function handleChannelEvent(event, options) {
     const { account, config, core, statusSink, log } = options;
+    if (event.channel?.id && event.channel.name) {
+        channelNameCache.set(`${account.accountId}:${event.channel.id}`, event.channel.name);
+    }
     const eventType = event.data?.type;
     if (eventType === "message:reaction:add" || eventType === "message:reaction:remove") {
         const reactionPayload = event.data.data;

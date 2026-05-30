@@ -1,6 +1,6 @@
 {
-  "name": "@skyzi000/open-webui",
-  "version": "0.4.2",
+  "name": "@harrisonyhq/open-webui",
+  "version": "0.4.3",
   "description": "OpenClaw plugin to connect with Open WebUI Channels. Enables bidirectional communication with Open WebUI channels, making OpenClaw act as a user within Open WebUI.",
   "type": "module",
   "main": "dist/index.js",
@@ -15,7 +15,7 @@
     "plugin",
     "chat"
   ],
-  "author": "Skyzi000",
+  "author": "harrisonyhq",
   "license": "MIT",
   "openclaw": {
     "extensions": [
@@ -30,7 +30,7 @@
       "id": "open-webui",
       "label": "Open WebUI",
       "selectionLabel": "Open WebUI (Channels)",
-      "docsPath": "https://github.com/skyzi000/openclaw-open-webui-channels#readme",
+        "docsPath": "https://github.com/harrisonyhq/openclaw-openwebui-channel#readme",
       "docsLabel": "GitHub README",
       "blurb": "Open WebUI channels integration via REST API and Socket.IO.",
       "markdownCapable": true,
@@ -43,12 +43,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/skyzi000/openclaw-open-webui-channels.git"
+    "url": "git+https://github.com/harrisonyhq/openclaw-openwebui-channel.git"
   },
   "bugs": {
-    "url": "https://github.com/skyzi000/openclaw-open-webui-channels/issues"
+    "url": "https://github.com/harrisonyhq/openclaw-openwebui-channel/issues"
   },
-  "homepage": "https://github.com/skyzi000/openclaw-open-webui-channels#readme",
+  "homepage": "https://github.com/harrisonyhq/openclaw-openwebui-channel#readme",
   "dependencies": {
     "socket.io-client": "^4.7.0"
   },

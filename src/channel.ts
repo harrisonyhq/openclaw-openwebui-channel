@@ -25,7 +25,7 @@ const meta = {
   id: "open-webui",
   label: "Open WebUI",
   selectionLabel: "Open WebUI (Channels)",
-  docsPath: "https://github.com/skyzi000/openclaw-open-webui-channels#readme",
+  docsPath: "https://github.com/harrisonyhq/openclaw-openwebui-channel#readme",
   docsLabel: "GitHub README",
   blurb: "Open WebUI channels integration via REST API and Socket.IO.",
 };

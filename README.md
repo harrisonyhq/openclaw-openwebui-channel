@@ -1,141 +1,125 @@
-# OpenClaw Open WebUI Channels Plugin
+# OpenClaw Open WebUI Channel Plugin
 
-[🇯🇵 日本語版はこちら](README.ja.md)
+[中文文档](README.zh-CN.md)
 
-A plugin that connects OpenClaw to Open WebUI Channels. Enables OpenClaw to act as a user within Open WebUI and engage in bidirectional communication in channels.
+This plugin connects OpenClaw to Open WebUI Channels. It lets an OpenClaw bot user join Open WebUI channels, receive mentions, send replies, handle files and reactions, and optionally mirror OpenClaw agent events back to the originating Open WebUI channel.
+
+## Project Status
+
+This project is a modified fork of [Skyzi000/openclaw-open-webui-channels](https://github.com/Skyzi000/openclaw-open-webui-channels). The fork updates the original community plugin for newer OpenClaw plugin packaging requirements and adds compatibility fixes and channel-event mirroring behavior.
+
+## OpenClaw Version
+
+This repository is developed and type-checked with the OpenClaw SDK package declared in `package.json`:
+
+- Development SDK: `openclaw@^2026.5.22`
+- Runtime compatibility target: OpenClaw `2026.5.7` and newer
+
+OpenClaw `2026.5.7` does not expose the newer `api.agent.events` facade, so this plugin falls back to the older flat `api.registerAgentEventSubscription` API when available. If a runtime does not expose any agent event subscription API, normal channel messaging still works, but `progressEvents` is disabled.
 
 ## Features
 
-- 🔌 **Real-time Connection**: Instant message sending and receiving via REST API and Socket.IO
-- 💬 **Bidirectional Messaging**: Supports both sending from OpenClaw and receiving from channels
-- 📎 **Media Support**: Upload and download files and media
-- 🧵 **Thread Support**: Handle threads and replies
-- 👍 **Reactions**: Add and remove reactions on messages
-- ⌨️ **Typing Indicator**: Display when OpenClaw is composing a reply
-- 📊 **Rich Rendering**: Take advantage of Open WebUI's excellent Markdown support — tables, syntax-highlighted code blocks, LaTeX math, and more render beautifully compared to platforms like Discord
+- Open WebUI Channel inbound messages through Socket.IO
+- OpenClaw outbound messages through Open WebUI REST APIs
+- Dedicated Open WebUI bot account support
+- Mention-gated group/channel activation
+- Direct, group, channel, thread, and reply handling
+- File upload and download support
+- Message reactions
+- Typing indicator while OpenClaw is processing
+- Periodic channel rejoin so channels created after plugin startup can work
+- Optional mirroring of OpenClaw agent events to the originating Open WebUI channel
+- Compiled `dist/` runtime output for OpenClaw plugin installation
 
-## Requirements
+## Install
 
-- OpenClaw
-- Open WebUI with Channels feature enabled
-
-## Installation
-
-### Recommended: Ask OpenClaw
-
-Tell OpenClaw:
-
-```
-https://github.com/skyzi000/openclaw-open-webui-channels
-I want to use this plugin
-```
-
-OpenClaw will automatically clone the repository and install it.
-
-### Manual Installation (Reference)
+Clone the repository into your OpenClaw extensions directory or another local path:
 
 ```bash
-# Clone the repository
-git clone https://github.com/skyzi000/openclaw-open-webui-channels.git
-
-# Install to OpenClaw
-openclaw plugins install ./openclaw-open-webui-channels
+git clone https://github.com/harrisonyhq/openclaw-openwebui-channel.git
+cd openclaw-openwebui-channel
 ```
 
-## Setup
+Install the plugin:
 
-### 1. Open WebUI Preparation
-
-Create a dedicated bot user account on Open WebUI for this plugin:
-
-1. Access Open WebUI
-2. Add a new user via Admin Panel > Users > "+" button (e.g., `openclaw-bot@yourdomain.com`)
-   - Open WebUI typically has email verification disabled, so non-existent email addresses work fine
-3. Invite/add the created bot user to the channels you want OpenClaw to connect to
-4. Note down the email address and password
-
-> **💡 Tip**: Strongly recommended to create a dedicated bot account for OpenClaw rather than using a personal account.
-
-### 2. OpenClaw Configuration
-
-#### Method A: Ask OpenClaw (Recommended)
-
-After installing the plugin, tell OpenClaw in a **secure chat environment** (WebUI, TUI, etc.):
-
-```
-I want to connect to Open WebUI Channels
+```bash
+openclaw plugins install .
 ```
 
-OpenClaw will ask for the necessary information. Provide:
-
-- **Base URL**: Open WebUI URL (e.g., `http://your-server:3000`)
-- **Email**: Bot user email address
-- **Password**: Bot user password
-- **Channel IDs** (optional): Specific channel IDs to monitor (monitors all channels if omitted)
-
-OpenClaw will automatically update the configuration file (`~/.openclaw/openclaw.json` in the `channels.open-webui` section) and restart as needed.
-
-> **🔒 Security**: Contains authentication credentials, so configure in a secure chat environment that is not intercepted.
-
-#### Method B: Manual Configuration
-
-You can also directly edit `~/.openclaw/openclaw.json`:
-
-```json
-{
-  "channels": {
-    "open-webui": {
-      "enabled": true,
-      "baseUrl": "http://your-server:3000",
-      "email": "openclaw-bot@yourdomain.com",
-      "password": "your-password",
-      "channelIds": [],
-      "requireMention": true,
-      "progressEvents": {
-        "enabled": true
-      }
-    }
-  }
-}
-```
-
-After configuration, restart OpenClaw:
+Restart OpenClaw Gateway:
 
 ```bash
 openclaw gateway restart
 ```
 
-### 3. Verification
+## Open WebUI Setup
 
-After setup is complete, **mention the bot user by its username** in the connected Open WebUI channel (e.g., `@OpenClaw` if you named the user "OpenClaw") and send a message. If OpenClaw responds, the connection is successful.
+1. Enable Channels in Open WebUI.
+2. Create a dedicated bot user, for example `openclaw-bot@example.com`.
+3. Add the bot user to every channel where OpenClaw should respond.
+4. Copy the Open WebUI base URL, bot email, bot password, and any channel IDs you want to restrict to.
 
-## ⚠️ Important Notice
+If `channelIds` is empty, the plugin monitors every channel the bot user can access. If `channelIds` contains IDs, only those channels are processed.
 
-Sender control (allow lists, etc.) is not yet implemented. Anyone with access to the connected Open WebUI channel can send instructions to OpenClaw. Use this plugin only in channels accessible to trusted users.
+## OpenClaw Configuration
 
-## Usage
-
-Once setup is complete, OpenClaw will monitor messages in the specified channels and respond to mentions.
-
-### Basic Usage
-
-- **Chat with OpenClaw**: Mention OpenClaw in the channel to talk
-- **File Sending**: OpenClaw can send and receive images and files
-- **Thread Support**: Conversations within threads are properly handled
-
-### Mirroring Control UI Agent Events
-
-Set `channels.open-webui.progressEvents.enabled` to `true` to mirror OpenClaw agent events for Open WebUI-originated runs back into the same Open WebUI channel. This does not summarize each step; it sends the structured event payload that OpenClaw exposes to plugins as JSON.
+Edit `~/.openclaw/openclaw.json`:
 
 ```json
 {
   "channels": {
     "open-webui": {
       "enabled": true,
-      "baseUrl": "http://your-server:3000",
-      "email": "openclaw-bot@yourdomain.com",
+      "baseUrl": "http://your-open-webui:3000",
+      "email": "openclaw-bot@example.com",
       "password": "your-password",
-      "channelIds": ["79d159b0-df15-4756-b605-1fafe3d615f5"],
+      "channelIds": [],
+      "requireMention": true,
+      "textChunkLimit": 4000,
+      "progressEvents": {
+        "enabled": false
+      }
+    }
+  },
+  "messages": {
+    "groupChat": {
+      "visibleReplies": "automatic"
+    }
+  }
+}
+```
+
+Restart after changing config:
+
+```bash
+openclaw gateway restart
+```
+
+## Usage
+
+Mention the bot user in an Open WebUI channel:
+
+```text
+@openclaw-bot check this service status
+```
+
+When `requireMention` is `true`, non-DM channel messages are ignored unless they mention the bot. Direct messages bypass the mention requirement.
+
+## Agent Event Mirroring
+
+Set `progressEvents.enabled` to `true` if you want the plugin to mirror OpenClaw agent events back into the same Open WebUI channel.
+
+This is not a human-written status summary. The plugin sends the structured event payload exposed by OpenClaw to plugins as JSON. It is intended to mirror the event data behind Control UI-style progress views as closely as the plugin API allows.
+
+```json
+{
+  "channels": {
+    "open-webui": {
+      "enabled": true,
+      "baseUrl": "http://your-open-webui:3000",
+      "email": "openclaw-bot@example.com",
+      "password": "your-password",
+      "channelIds": [],
       "requireMention": true,
       "progressEvents": {
         "enabled": true,
@@ -154,37 +138,58 @@ Set `channels.open-webui.progressEvents.enabled` to `true` to mirror OpenClaw ag
         "codeFence": true
       }
     }
-  },
-  "messages": {
-    "groupChat": {
-      "visibleReplies": "automatic"
-    }
   }
 }
 ```
 
-By default, `thinking` events are not mirrored because they may expose internal reasoning. If your OpenClaw runtime exposes only safe thinking summaries and you explicitly want them in the channel, set `progressEvents.includeThinking` to `true`.
+By default, `thinking` events are not mirrored because they may expose internal reasoning. Only enable `progressEvents.includeThinking` if you explicitly understand and accept that risk.
+
+## Config Reference
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | boolean | `true` | Enables this channel plugin account. |
+| `baseUrl` | string | required | Open WebUI base URL. |
+| `email` | string | required | Dedicated bot account email. |
+| `password` | string | required | Dedicated bot account password. |
+| `userId` | string | optional | Optional bot user ID override. |
+| `channelIds` | string[] | `[]` | Channel allow-list. Empty means all accessible channels. |
+| `requireMention` | boolean | `true` | Require bot mention in non-DM chats. |
+| `name` | string | optional | Display name for this account in OpenClaw. |
+| `textChunkLimit` | number | `4000` | Maximum characters per Open WebUI message chunk. |
+| `progressEvents.enabled` | boolean | `false` | Mirror OpenClaw agent events into Open WebUI. |
+| `progressEvents.includeStreams` | string[] | public streams | Optional event stream allow-list. |
+| `progressEvents.excludeStreams` | string[] | optional | Optional event stream deny-list. |
+| `progressEvents.includeThinking` | boolean | `false` | Also mirror `thinking` events. Use with care. |
+| `progressEvents.maxMessageChars` | number | optional | Truncate serialized event JSON before posting. |
+| `progressEvents.codeFence` | boolean | `true` | Wrap mirrored JSON in a Markdown `json` code fence. |
+
+## Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run checks:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+OpenClaw requires compiled runtime output for TypeScript plugin entries. Keep `dist/` committed when publishing or installing this repository directly.
 
 ## Troubleshooting
 
-If you encounter issues, tell OpenClaw via another channel (WebUI, TUI, etc.):
-
-```
-The Open WebUI Channels plugin isn't working. Debug it
-```
-
-OpenClaw will automatically check logs and configuration to diagnose and fix the problem.
+- If new Open WebUI channels do not respond, make sure the bot user has joined them. The plugin rejoins channel rooms periodically, but it cannot receive messages from channels the bot cannot access.
+- If only configured channels respond, check whether `channelIds` is non-empty.
+- If `progressEvents` does not work on an older OpenClaw runtime, check Gateway logs. Normal channel messaging can still work even when the runtime does not expose agent event subscription APIs.
+- If plugin installation complains about TypeScript entries, run `npm run build` and reinstall.
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT. See [LICENSE](LICENSE).
 
-## Author
-
-[Skyzi000](https://github.com/skyzi000)'s OpenClaw - This plugin was written by OpenClaw
-
-## Links
-
-- [GitHub Repository](https://github.com/skyzi000/openclaw-open-webui-channels)
-- [Issues & Feature Requests](https://github.com/skyzi000/openclaw-open-webui-channels/issues)
-- [OpenClaw Official Documentation](https://docs.openclaw.ai/)
+This fork preserves the original project's MIT license notice and adds the fork maintainer's MIT license notice.

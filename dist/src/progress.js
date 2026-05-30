@@ -110,7 +110,13 @@ async function mirrorEvent(event, target) {
     }
 }
 export function registerOpenWebUIProgressEvents(api) {
-    api.agent.events.registerAgentEventSubscription({
+    const registerAgentEventSubscription = api.agent?.events?.registerAgentEventSubscription ??
+        api.registerAgentEventSubscription;
+    if (typeof registerAgentEventSubscription !== "function") {
+        api.logger?.warn?.("[open-webui] progressEvents disabled: this OpenClaw runtime does not expose agent event subscriptions. Upgrade OpenClaw to mirror Control UI events.");
+        return;
+    }
+    registerAgentEventSubscription({
         id: "open-webui-control-ui-event-mirror",
         description: "Mirror OpenClaw agent events for Open WebUI-originated runs back to the Open WebUI channel.",
         streams: [
